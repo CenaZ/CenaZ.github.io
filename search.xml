@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<search> 
+  
+  
+    
+    <entry>
+      <title>SQL 重置Identity标识列的值</title>
+      <link href="/2019/12/11/2017-conclusion/"/>
+      <url>/2019/12/11/2017-conclusion/</url>
+      
+        <content type="html"><![CDATA[<div align="middle"><iframe frameborder="no" border="0" marginwidth="0" marginheight="0" width="330" height="86" src="http://www.kugou.com/song-36/4ioonfc.html#hash=60A3F7DA48F4432F659505EFC0FFCCB9&album_id=0"></iframe></div><p>SQL 重置Identity标识列的值</p><h1 id="一、背景"><a href="#一、背景" class="headerlink" title="一、背景"></a>一、背景</h1><hr><p>SQL Server数据库中表A中Id字段的定义是：[Id] [int] IDENTITY(1,1)，随着数据的不断增长，Id值已经接近2147483647（int的取值范围为：-2 147 483 648 到 2 147 483 647）了，虽然已经对旧数据进行归档，但是这个表需要保留最近的1亿数据，有什么方法解决Id值就快爆的问题呢？<br>　　解决上面的问题有两个办法：一个是修改表结构，把Id的int数据类型修改为bigint；第二个是重置Id（Identity标识列）的值，使它重新增长。<br>　　当前标识值：current identity value，用于记录和保存最后一次系统分配的Id值；下次分配Id就是：当前标识值+标识增量（通常为+1，也可以自行设置；<br>　　当前列值：current column value，这Id值到目前为止的最大值；</p><h1 id="二、重置过程"><a href="#二、重置过程" class="headerlink" title="二、重置过程"></a>二、重置过程</h1><p><img src="749826.jpg" alt><br>最后引用《我的少女时代》里的一句话吧。</p><blockquote><p>每人都有一颗林真心，遇见是最美好的小幸运，谢谢你出现在我的青春里。<br><strong>(一) 下面就测试重置Identity标识列，首先使用下面的SQL创建测试表：</strong></p></blockquote><p>–创建测试表CREATE TABLE [dbo].[Test_Identity]( [IdentityId] [int] IDENTITY(1,1) NOT NULL, [Name] <a href="10">nchar</a> NULL, CONSTRAINT [PK_testid] PRIMARY KEY CLUSTERED ( [IdentityId] ASC)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]) ON [PRIMARY]</p><p><strong>(二) 显示插入Id值，插入后表[Test_Identity]的记录如Figure1所示，接着再隐式插入Id值，插入后表[Test_Identity]的记录如Figure2所示。</strong></p><p>–显示插入Id值SET IDENTITY_INSERT [Test_Identity] ONINSERT INTO <a href="IdentityId,Name">Test_Identity</a>SELECT 1000,’name1’SET IDENTITY_INSERT [Test_Identity] OFF–隐式插入Id值INSERT INTO <a href="Name">Test_Identity</a>SELECT ‘name2’</p><p>F1</p><p>（Figure1：数据记录）</p><p>F2</p><p>（Figure2：数据记录）</p><p><strong>(三) DBCC CHECKIDENT(‘table_name’, NORESEED)不重置当前标识值。DBCC CHECKIDENT 返回一个报表，它指明当前标识值和应有的标识值。执行下面的SQL语句，返回的信息表示：当前标识值’1001’，当前列值’1001’，如Figure2所示。</strong></p><p>–查询标识值DBCC CHECKIDENT(‘Test_Identity’, NORESEED)/<em>检查标识信息: 当前标识值’1001’，当前列值’1001’。DBCC 执行完毕。如果DBCC 输出了错误信息，请与系统管理员联系。</em>/</p><p><strong>(四) 再隐式插入Id值，插入后表[Test_Identity]的记录如Figure3所示。所以执行上面的SQL语句是不会重置当前标识值的，可以放心执行。</strong></p><p>–隐式插入Id值INSERT INTO <a href="Name">Test_Identity</a>SELECT ‘name3’<br>F3</p><p>（Figure3：数据记录）</p><p>–查询标识值DBCC CHECKIDENT(‘Test_Identity’, NORESEED)/<em>检查标识信息: 当前标识值’1002’，当前列值’1002’。DBCC 执行完毕。如果DBCC 输出了错误信息，请与系统管理员联系。</em>/</p><p><strong>(五) DBCC CHECKIDENT (‘table_name’) 或DBCC CHECKIDENT (‘table_name’, RESEED) 如果表的当前标识值小于列中存储的最大标识值，则使用标识列中的最大值对其进行重置。</strong></p><p>因为上面返回结果是：当前标识值’1002’，当前列值’1002’，所以执行下面的SQL语句是没有影响的，什么时候才有影响呢？参考：（当在Figure4状态下执行下面的SQL命令，结果就会如Figure7所示）</p><p>–重置标识值DBCC CHECKIDENT(‘Test_Identity’, RESEED)/<em>检查标识信息: 当前标识值’1002’，当前列值’1002’。DBCC 执行完毕。如果DBCC 输出了错误信息，请与系统管理员联系。</em>/</p><p><strong>(六) DBCC CHECKIDENT(‘table_name’, RESEED, new_reseed_value)当前值设置为 new_reseed_value。如果自创建表后没有将行插入该表，则在执行 DBCC CHECKIDENT 后插入的第一行将使用 new_reseed_value 作为标识。否则，下一个插入的行将使用 new_reseed_value + 1。如果 new_reseed_value 的值小于标识列中的最大值，以后引用该表时将产生 2627 号错误信息。</strong></p><p>要理解上面的描述，可以进行下面的测试：</p><p>1) 重新设置当前值设置为new_reseed_value = 995，执行下面的SQL语句返回的信息如下所示；</p><p>–重置标识值DBCC CHECKIDENT(‘Test_Identity’, RESEED, 995)/<em>检查标识信息: 当前标识值’1002’，当前列值’995’。DBCC 执行完毕。如果DBCC 输出了错误信息，请与系统管理员联系。</em>/</p><p>2) 继续往[Test_Identity]表插入数据，执行下面的SQL语句插入后的结果如Figure4所示；插入的Id值为new_reseed_value + 1 = 996；</p><p>–隐式插入Id值INSERT INTO <a href="Name">Test_Identity</a>SELECT ‘name4’<br>F4</p><p>（Figure4：数据记录）</p><p>3) 查看现在的标识值，与上面的进行对比，你就可以理解【当前标识值】与【当前列值】的意义了；</p><p>–查询标识值DBCC CHECKIDENT(‘Test_Identity’, NORESEED)/<em>检查标识信息: 当前标识值’996’，当前列值’1002’。DBCC 执行完毕。如果DBCC 输出了错误信息，请与系统管理员联系。</em>/</p><p>4) 继续往[Test_Identity]表插入数据，执行3次后表的数据如Figure5所示；</p><p>–隐式插入Id值INSERT INTO <a href="Name">Test_Identity</a>SELECT ‘name5’<br>F5</p><p>（Figure5：数据记录）</p><p>5) 如果现在继续往[Test_Identity]表插入数据会发生什么事情呢？将产生 2627 号错误信息，如下面的错误信息；</p><p>消息2627，级别14，状态1，第2 行</p><p>违反了PRIMARY KEY 约束’PK_testid’。不能在对象’dbo.Test_Identity’ 中插入重复键。</p><p>语句已终止。</p><p>6) 下面来测试创建表后没有插入行，如果这个时候执行重置标识值会发生什么事情？清空[Test_Identity]表，再重新设置标识值，返回的信息如下面所示；</p><p>–清空表truncate table [Test_Identity]–重置标识值DBCC CHECKIDENT(‘Test_Identity’, RESEED, 995)/<em>检查标识信息: 当前标识值’NULL’，当前列值’995’。DBCC 执行完毕。如果DBCC 输出了错误信息，请与系统管理员联系。</em>/</p><p>7) 这个时候往[Test_Identity]表插入数据，数据就如Figure6所示，这说明了：“如果自创建表后没有将行插入该表，则在执行 DBCC CHECKIDENT 后插入的第一行将使用 new_reseed_value 作为标识。”</p><p>–隐式插入Id值INSERT INTO <a href="Name">Test_Identity</a>SELECT ‘name5’<br>F6</p><p>（Figure6：数据记录）</p><p>F7</p><p>（Figure7：数据记录）</p><p>8) 假如我们删除了IdentityId为1000和1001的记录，这个时候继续插入数据，会重新生成1000和10001值吗？效果如Figure10所示（重新覆盖了）；</p><p>–删除和delete from [Test_Identity] where IdentityId=1000delete from [Test_Identity] where IdentityId=1001<br>F8</p><p>（Figure8：数据记录）</p><p>–重置标识值DBCC CHECKIDENT(‘Test_Identity’, RESEED, 996)–隐式插入Id值INSERT INTO <a href="Name">Test_Identity</a>SELECT ‘name6’<br>F9</p><p>（Figure9：数据记录）</p><p>F10</p><p>（Figure10：数据记录）</p><p>(七) 总结：到这里，我们已经可以解决Id值就快爆的问题了，因为我们旧的数据会定时归档，所以不会出现2627错误信息；而另外一个场景是当出现Figure5的时候，可以执行DBCC CHECKIDENT(‘Test_Identity’, RESEED)，设置为当前列最大值为标识值，防止出现2627错误信息。</p><h1 id="三、补充说明"><a href="#三、补充说明" class="headerlink" title="三、补充说明"></a>三、补充说明</h1><p>在MySQL中，也有类似Identity的功能：</p><p><code>IDs</code> int(11) unsigned NOT NULL AUTO_INCREMENT</p><p>在创建表的时候，会有一个选项AUTO_INCREMENT=17422061，直接可以设置起始值，还可以设置步长：</p><p>SHOW VARIABLES LIKE ‘auto_inc%’;</p><p>起始值：auto_increment_offset</p><p>步长：auto_increment_increment</p><p>SET @auto_increment_increment=10;</p><p>SELECT LAST_INSERT_ID();</p><h1 id="四、参考文献"><a href="#四、参考文献" class="headerlink" title="四、参考文献"></a>四、参考文献</h1><p>重置MSSQL的Identity标识列的值</p><p>DBCC CHECKIDENT (Transact-SQL)</p><p>SQLServer中的@@IDENTITY，SCOPE_IDENTITY和IDENT_CURRENT</p><p>SCOPE_IDENTITY (Transact-SQL)</p>]]></content>
+      
+      
+      <categories>
+          
+          <category> SQL </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> SQL </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+  
+  
+</search>

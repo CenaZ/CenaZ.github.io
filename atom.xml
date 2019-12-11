@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>果达博客</title>
+  
+  <subtitle>Cena</subtitle>
+  <link href="/atom.xml" rel="self"/>
+  
+  <link href="https://guoda.shop/"/>
+  <updated>2019-12-11T11:19:09.334Z</updated>
+  <id>https://guoda.shop/</id>
+  
+  <author>
+    <name>Cena</name>
+    
+  </author>
+  
+  <generator uri="http://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>SQL 重置Identity标识列的值</title>
+    <link href="https://guoda.shop/2019/12/11/2017-conclusion/"/>
+    <id>https://guoda.shop/2019/12/11/2017-conclusion/</id>
+    <published>2019-12-11T10:57:53.648Z</published>
+    <updated>2019-12-11T11:19:09.334Z</updated>
+    
+    <summary type="html">
+    
+      
+      
+        
+        
+          &lt;div align=&quot;middle&quot;&gt;&lt;iframe frameborder=&quot;no&quot; border=&quot;0&quot; marginwidth=&quot;0&quot; marginheight=&quot;0&quot; width=&quot;330&quot; height=&quot;86&quot;
+        
+      
+    
+    </summary>
+    
+      <category term="SQL" scheme="https://guoda.shop/categories/SQL/"/>
+    
+    
+      <category term="SQL" scheme="https://guoda.shop/tags/SQL/"/>
+    
+  </entry>
+  
+</feed>
