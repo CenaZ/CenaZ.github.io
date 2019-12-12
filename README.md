@@ -2,4 +2,4 @@
 guoda.shop
 
 This is forked godweiyang's repo.
-Thanks for hime. https://godweiyang.com
+Thanks for him. https://godweiyang.com
